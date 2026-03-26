@@ -68,6 +68,7 @@ namespace Autorunner {
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             panelAutorunTaskItems = new FlowLayoutPanel();
             buttonAddAutorun = new Button();
             SuspendLayout();
@@ -101,6 +102,7 @@ namespace Autorunner {
             ClientSize = new Size(590, 748);
             Controls.Add(panelAutorunTaskItems);
             Controls.Add(buttonAddAutorun);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Margin = new Padding(3, 4, 3, 4);
             Name = "MainForm";
             Text = "Autorunner";

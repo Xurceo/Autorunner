@@ -11,11 +11,7 @@ namespace Autorunner
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
 
         //Delete autoruns later!
-        public BindingList<Autorun> Autoruns { get; set; } = new BindingList<Autorun>
-        {
-            new Autorun("Блокнот, запуск від імені адміністратора", @"C:\Windows\System32\notepad.exe", "", AutorunType.Application),
-            new Autorun("Steam", @"C:\Program Files (x86)\Steam\steam.exe", "", AutorunType.Application)
-        };
+        public BindingList<Autorun> Autoruns { get; set; } = new BindingList<Autorun>();
 
         NotifyIcon trayIcon = new NotifyIcon();
 
@@ -28,9 +24,16 @@ namespace Autorunner
         public MainForm()
         {
             InitializeComponent();
-            trayIcon.Icon = MainForm.Main;
+            // Ensure tray icon is valid; fallback to a system icon if resource is missing
+            try
+            {
+                trayIcon.Icon = MainForm.Main ?? SystemIcons.Application;
+            }
+            catch
+            {
+                trayIcon.Icon = SystemIcons.Application;
+            }
             trayIcon.Text = "Autorunner";
-            trayIcon.Visible = true;
 
             // Context menu for tray icon
             var menu = new ContextMenuStrip();
@@ -40,6 +43,10 @@ namespace Autorunner
 
             trayIcon.DoubleClick += (s, e) => ShowWindow();
 
+            // Make the tray icon visible after configuration
+            trayIcon.Visible = true;
+
+            LoadAutoruns();
             this.Load += (s, e) => AddSavedAutorunsToFlowPanel();
             RunAutoruns();
         }
@@ -72,7 +79,6 @@ namespace Autorunner
         // Add autoruns to panel
         public void AddSavedAutorunsToFlowPanel()
         {
-            LoadAutoruns();
             foreach (var autorun in Autoruns)
             {
                 AddAutorunToFlowPanel(autorun);
@@ -102,6 +108,7 @@ namespace Autorunner
             {
                 var deserialized = JsonSerializer.Deserialize<List<Autorun>>(json);
                 Autoruns = new BindingList<Autorun>(deserialized ?? new List<Autorun>());
+
             }
             catch (Exception ex)
             {
@@ -214,6 +221,9 @@ namespace Autorunner
                     AddAutorunToFlowPanel(autorun);
 
                     MessageBox.Show($"Додано: {dialog.Result.Name}");
+
+                    // Save updated list of autoruns to file after adding new task to json file
+                    SaveAutoruns(Autoruns.ToList());
                 }
             }
         }
@@ -225,9 +235,12 @@ namespace Autorunner
             using (var dialog = new AutorunForm())
             {
                 // Pre-filled data
+                dialog.TextBox_Name.Text = autorun.Name;
                 dialog.ApplicationPath = autorun.Path;
                 dialog.OpenApp.Text = Path.GetFileName(autorun.Path);
                 dialog.TextBox_Command.Text = autorun.Command;
+                dialog.radioButtonApp.Checked = autorun.Type == AutorunType.Application;
+                dialog.radioButtonCommand.Checked = autorun.Type == AutorunType.Command;
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
                     if (dialog.Result == null)
@@ -251,6 +264,9 @@ namespace Autorunner
                         }
                     }
                     MessageBox.Show($"Завдання оновлено: {dialog.Result.Name}");
+
+                    // Save updated list of autoruns to file after editing task to json file
+                    SaveAutoruns(Autoruns.ToList());
                 }
             }
         }
@@ -276,6 +292,9 @@ namespace Autorunner
                     }
                 }
                 MessageBox.Show($"Завдання видалено: {task.Name}");
+
+                // Save updated list of autoruns to file after deleting task to json file
+                SaveAutoruns(Autoruns.ToList());
             }
         }
     }

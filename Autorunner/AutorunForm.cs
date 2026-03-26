@@ -19,7 +19,8 @@ namespace Autorunner
 
         private void Add_Click(object sender, EventArgs e)
         {
-            Result = new Autorun(TextBox_Name.Text, ApplicationPath, TextBox_Command.Text);
+            var type = radioButtonApp.Checked ? AutorunType.Application : AutorunType.Command;
+            Result = new Autorun(TextBox_Name.Text, ApplicationPath, TextBox_Command.Text, type);
 
             this.DialogResult = DialogResult.OK;
             this.Close();
@@ -40,13 +41,13 @@ namespace Autorunner
             OpenApp.Text = fileName;
         }
 
-        private void radioButtonApp_Click(object sender, EventArgs e)
+        private void radioButtonApp_CheckedChanged(object sender, EventArgs e)
         {
             OpenApp.Enabled = true;
             TextBox_Command.Enabled = false;
         }
 
-        private void radioButtonCommand_Click(object sender, EventArgs e)
+        private void radioButtonCommand_CheckedChanged(object sender, EventArgs e)
         {
             OpenApp.Enabled = false;
             TextBox_Command.Enabled = true;

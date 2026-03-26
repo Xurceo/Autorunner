@@ -16,12 +16,15 @@ namespace Autorunner
         public AutoRunTaskItem(Autorun task)
         {
             this.BackColor = Color.LightBlue;
+
             InitializeComponent();
             Task = task;
 
-            System.Drawing.Icon appIcon = System.Drawing.Icon.ExtractAssociatedIcon(task.Path)!;
-            Image.Image = appIcon.ToBitmap();
-
+            if (task.Path != null)
+            {
+                System.Drawing.Icon appIcon = System.Drawing.Icon.ExtractAssociatedIcon(task.Path)!;
+                Image.Image = appIcon.ToBitmap();
+            }
             labelName!.Text = task.Name;
 
             buttonEdit!.Click += (s, e) => EditClicked?.Invoke(Task);
@@ -47,9 +50,9 @@ namespace Autorunner
             // labelName
             // 
             labelName.AutoSize = true;
-            labelName.Location = new Point(57, 15);
+            labelName.Location = new Point(57, 20);
             labelName.Name = "labelName";
-            labelName.Size = new Size(50, 20);
+            labelName.Size = new Size(38, 15);
             labelName.TabIndex = 0;
             labelName.Text = "label1";
             // 
@@ -101,24 +104,24 @@ namespace Autorunner
             // AutoRunTaskItem
             // 
             AutoScaleMode = AutoScaleMode.None;
-            Controls.Add(buttonRun);
-            Controls.Add(Image);
-            Controls.Add(buttonDelete);
-            Controls.Add(buttonEdit);
             Controls.Add(labelName);
+            Controls.Add(Image);
+            Controls.Add(buttonRun);
+            Controls.Add(buttonEdit);
+            Controls.Add(buttonDelete);
+            Margin = new Padding(0, 0, 0, 2);
             Name = "AutoRunTaskItem";
             Size = new Size(363, 52);
             ((System.ComponentModel.ISupportInitialize)Image).EndInit();
             ResumeLayout(false);
             PerformLayout();
-
         }
 
-        private Label labelName;
-        private IconButton buttonEdit;
+        public Label labelName;
+        public IconButton buttonEdit;
         private PictureBox Image;
-        private IconButton buttonRun;
-        private IconButton buttonDelete;
+        public IconButton buttonRun;
+        public IconButton buttonDelete;
 
         private void buttonRun_Click(object sender, EventArgs e)
         {

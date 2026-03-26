@@ -75,7 +75,7 @@ namespace Autorunner {
             // panelAutorunTaskItems
             // 
             panelAutorunTaskItems.AutoScroll = true;
-            panelAutorunTaskItems.Dock = DockStyle.Fill;
+            panelAutorunTaskItems.Dock = DockStyle.Top;
             panelAutorunTaskItems.FlowDirection = FlowDirection.TopDown;
             panelAutorunTaskItems.Location = new Point(0, 47);
             panelAutorunTaskItems.Margin = new Padding(3, 4, 3, 4);
@@ -104,6 +104,7 @@ namespace Autorunner {
             Margin = new Padding(3, 4, 3, 4);
             Name = "MainForm";
             Text = "Autorunner";
+            Resize += MainForm_Resize;
             ResumeLayout(false);
         }
 

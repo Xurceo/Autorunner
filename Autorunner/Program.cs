@@ -12,10 +12,10 @@ namespace Autorunner
             // see https://aka.ms/applicationconfiguration.
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            Application.SetHighDpiMode(HighDpiMode.SystemAware);
 
             var form = new MainForm();
             form.ShowInTaskbar = false; // не показувати в таскбарі при старті
-                                        // form.Show() — не викликаємо, форма стартує прихованою
             Application.Run(form);
         }
     }

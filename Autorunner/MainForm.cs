@@ -9,8 +9,13 @@ namespace Autorunner
     public partial class MainForm : Form
     {
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public BindingList<Autorun> Autoruns { get; set; } = new BindingList<Autorun>();
 
+        //Delete autoruns later!
+        public BindingList<Autorun> Autoruns { get; set; } = new BindingList<Autorun>
+        {
+            new Autorun("Блокнот, запуск від імені адміністратора", @"C:\Windows\System32\notepad.exe", "", AutorunType.Application),
+            new Autorun("Steam", @"C:\Program Files (x86)\Steam\steam.exe", "", AutorunType.Application)
+        };
 
         NotifyIcon trayIcon = new NotifyIcon();
 
@@ -27,7 +32,7 @@ namespace Autorunner
             trayIcon.Text = "Autorunner";
             trayIcon.Visible = true;
 
-            // Контекстне меню трею
+            // Context menu for tray icon
             var menu = new ContextMenuStrip();
             menu.Items.Add("Відкрити", null, (s, e) => ShowWindow());
             menu.Items.Add("Вийти", null, (s, e) => Application.Exit());
@@ -35,6 +40,7 @@ namespace Autorunner
 
             trayIcon.DoubleClick += (s, e) => ShowWindow();
 
+            this.Load += (s, e) => AddSavedAutorunsToFlowPanel();
             RunAutoruns();
         }
 
@@ -51,31 +57,72 @@ namespace Autorunner
 
             File.WriteAllText(save_path, json);
         }
-        public List<Autorun> LoadAutoruns()
+
+        // Rerender panel with tasks width of the panel
+        private void MainForm_Resize(object sender, EventArgs e)
+        {
+            foreach (AutoRunTaskItem item in panelAutorunTaskItems.Controls)
+            {
+                item.Width = panelAutorunTaskItems.ClientSize.Width;
+                item.labelName.MaximumSize = new Size(item.Width - item.buttonEdit.Width - item.buttonDelete.Width - 40, 0);
+            }
+
+        }
+
+        // Add autoruns to panel
+        public void AddSavedAutorunsToFlowPanel()
+        {
+            LoadAutoruns();
+            foreach (var autorun in Autoruns)
+            {
+                AddAutorunToFlowPanel(autorun);
+            }
+        }
+
+        // Add autorun to panel
+        public void AddAutorunToFlowPanel(Autorun autorun)
+        {
+            var itemControl = new AutoRunTaskItem(autorun);
+            itemControl.EditClicked += EditTask;
+            itemControl.DeleteClicked += DeleteTask;
+            panelAutorunTaskItems.Controls.Add(itemControl);
+            itemControl.Width = panelAutorunTaskItems.ClientSize.Width;
+            panelAutorunTaskItems.Refresh();
+        }
+
+        public void LoadAutoruns()
         {
             if (!File.Exists(save_path))
-                return new List<Autorun>();
+            {
+                return;
+            }
 
             var json = File.ReadAllText(save_path);
-            return JsonSerializer.Deserialize<List<Autorun>>(json)
-                   ?? new List<Autorun>();
+            try
+            {
+                var deserialized = JsonSerializer.Deserialize<List<Autorun>>(json);
+                Autoruns = new BindingList<Autorun>(deserialized ?? new List<Autorun>());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка при завантаженні авторанів: {ex.Message}");
+            }
         }
 
         private void RunAutoruns()
         {
-            Autoruns = new BindingList<Autorun>(LoadAutoruns());
+            // If there are no autoruns, we simply return without doing anything
+            if (Autoruns == null || Autoruns.Count == 0)
+            {
+                return;
+            }
+
+            // Iterate through each autorun task and execute it based on its type
             foreach (var autorun in Autoruns)
             {
                 try
                 {
-                    if (autorun.Type == AutorunType.Application)
-                    {
-                        Process.Start(autorun.Path);
-                    }
-                    else if (autorun.Type == AutorunType.Command)
-                    {
-                        Process.Start("cmd.exe", autorun.Command);
-                    }
+                    StartAutorun(autorun);
                 }
                 catch (Exception ex)
                 {
@@ -84,6 +131,46 @@ namespace Autorunner
             }
         }
 
+        // Starts autorun task silently without showing any windows or errors (used for autoruns that should run in the background)
+        private void StartAutorun(Autorun autorun)
+        {
+            if (autorun == null)
+                return;
+
+            if (autorun.Type == AutorunType.Application)
+            {
+                // Start an application executable. UseShellExecute = true so shell handles file associations and GUI apps show as expected.
+                if (string.IsNullOrWhiteSpace(autorun.Path) || !File.Exists(autorun.Path))
+                    return;
+
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = autorun.Path,
+                    UseShellExecute = true,
+                    // Set working directory to the exe folder so launched app resolves relative resources correctly
+                    WorkingDirectory = Path.GetDirectoryName(autorun.Path) ?? string.Empty
+                };
+
+                Process.Start(startInfo);
+            }
+            else if (autorun.Type == AutorunType.Command)
+            {
+                // Run a command via cmd.exe using /C so it executes and exits.
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/C {autorun.Command}",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = false,
+                    RedirectStandardError = false
+                };
+
+                Process.Start(startInfo);
+            }
+        }
+
+        // When the user tries to close the form, hide form in tray
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             if (e.CloseReason == CloseReason.UserClosing)
@@ -97,6 +184,7 @@ namespace Autorunner
             }
         }
 
+        // Open the form when the user clicks on the tray icon
         private void ShowWindow()
         {
             this.Show();
@@ -104,8 +192,11 @@ namespace Autorunner
             this.Activate();
         }
 
+        // When "Add autorun" clicked, open the form to add new autorun task
         private void AddAutorun_Click(object sender, EventArgs e)
         {
+            panelAutorunTaskItems.Invalidate();
+            // Open dialog form to add new autorun task
             using (var dialog = new AutorunForm())
             {
                 if (dialog.ShowDialog() == DialogResult.OK)
@@ -116,28 +207,27 @@ namespace Autorunner
                         return;
                     }
 
-                    // Додаємо об’єкт у список
+                    // Add autorun to the list
                     var autorun = dialog.Result;
                     Autoruns.Add(autorun);
 
-                    var itemControl = new AutoRunTaskItem(autorun);
-                    itemControl.EditClicked += EditTask;
-                    itemControl.DeleteClicked += DeleteTask;
-
-                    panelAutorunTaskItems.Controls.Add(itemControl);
+                    AddAutorunToFlowPanel(autorun);
 
                     MessageBox.Show($"Додано: {dialog.Result.Name}");
                 }
             }
         }
 
-        private void EditTask(Autorun task)
+        // When "Edit" clicked for a specific autorun task, open the form to edit that task
+        private void EditTask(Autorun autorun)
         {
+            // Same form as for adding new autorun, but with pre-filled data of the selected task
             using (var dialog = new AutorunForm())
             {
-                dialog.ApplicationPath = task.Path;
-                dialog.OpenApp.Text = Path.GetFileName(task.Path);
-                dialog.TextBox_Command.Text = task.Command;
+                // Pre-filled data
+                dialog.ApplicationPath = autorun.Path;
+                dialog.OpenApp.Text = Path.GetFileName(autorun.Path);
+                dialog.TextBox_Command.Text = autorun.Command;
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
                     if (dialog.Result == null)
@@ -146,16 +236,17 @@ namespace Autorunner
                         return;
                     }
 
-                    // Оновлюємо дані завдання
-                    task.Name = dialog.Result.Name;
-                    task.Command = dialog.Result.Command;
-                    task.Path = dialog.Result.Path;
-                    // Оновлюємо відображення
-                    foreach (AutoRunTaskItem item in panelAutorunTaskItems.Controls)
+                    // Refresh data
+                    autorun.Name = dialog.Result.Name;
+                    autorun.Command = dialog.Result.Command;
+                    autorun.Path = dialog.Result.Path;
+
+                    // Refresh view after editing
+                    foreach (AutoRunTaskItem task in panelAutorunTaskItems.Controls)
                     {
-                        if (item.Task == task)
+                        if (task.Task == autorun)
                         {
-                            item.RefreshView();
+                            task.RefreshView();
                             break;
                         }
                     }
@@ -164,20 +255,23 @@ namespace Autorunner
             }
         }
 
+        // When "Delete" clicked for a specific autorun task, ask for confirmation and delete that task if confirmed
         private void DeleteTask(Autorun task)
         {
             var confirmResult = MessageBox.Show($"Ви впевнені, що хочете видалити завдання '{task.Name}'?", "Підтвердження видалення", MessageBoxButtons.YesNo);
             if (confirmResult == DialogResult.Yes)
             {
-                // Видаляємо з BindingList
+                // Deleting from BindingList
                 Autoruns.Remove(task);
-                // Видаляємо відповідний контрол з панелі
+
+                // Deleting from the panel
                 foreach (AutoRunTaskItem item in panelAutorunTaskItems.Controls)
                 {
                     if (item.Task == task)
                     {
                         panelAutorunTaskItems.Controls.Remove(item);
                         item.Dispose();
+                        panelAutorunTaskItems.Invalidate();
                         break;
                     }
                 }

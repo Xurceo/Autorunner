@@ -25,14 +25,8 @@ namespace Autorunner
         {
             InitializeComponent();
             // Ensure tray icon is valid; fallback to a system icon if resource is missing
-            try
-            {
-                trayIcon.Icon = MainForm.Main ?? SystemIcons.Application;
-            }
-            catch
-            {
-                trayIcon.Icon = SystemIcons.Application;
-            }
+            trayIcon.Icon = this.Icon ?? SystemIcons.Application;
+
             trayIcon.Text = "Autorunner";
 
             // Context menu for tray icon
@@ -153,6 +147,7 @@ namespace Autorunner
                 var startInfo = new ProcessStartInfo
                 {
                     FileName = autorun.Path,
+                    WindowStyle = autorun.Minimized ? ProcessWindowStyle.Minimized : ProcessWindowStyle.Normal,
                     UseShellExecute = true,
                     // Set working directory to the exe folder so launched app resolves relative resources correctly
                     WorkingDirectory = Path.GetDirectoryName(autorun.Path) ?? string.Empty

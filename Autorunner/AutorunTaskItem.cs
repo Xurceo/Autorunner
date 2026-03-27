@@ -20,10 +20,14 @@ namespace Autorunner
             InitializeComponent();
             Task = task;
 
-            if (task.Path != null)
+            if (task.Path != null && File.Exists(task.Path))
             {
-                System.Drawing.Icon appIcon = System.Drawing.Icon.ExtractAssociatedIcon(task.Path)!;
-                Image.Image = appIcon.ToBitmap();
+                System.Drawing.Icon appIcon =  System.Drawing.Icon.ExtractAssociatedIcon(task.Path) ?? SystemIcons.Application;
+                Image!.Image = appIcon.ToBitmap();
+            }
+            else
+            {
+                Image!.Image = SystemIcons.Application.ToBitmap();
             }
             labelName!.Text = task.Name;
 

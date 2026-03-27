@@ -35,10 +35,12 @@
             Label_Name = new Label();
             radioButtonApp = new RadioButton();
             radioButtonCommand = new RadioButton();
+            checkBoxMinimized = new CheckBox();
             SuspendLayout();
             // 
             // Add
             // 
+            Add.Enabled = false;
             Add.Location = new Point(542, 9);
             Add.Margin = new Padding(3, 2, 3, 2);
             Add.Name = "Add";
@@ -55,6 +57,7 @@
             TextBox_Command.Name = "TextBox_Command";
             TextBox_Command.Size = new Size(471, 23);
             TextBox_Command.TabIndex = 3;
+            TextBox_Command.TextChanged += TextBox_Command_TextChanged;
             // 
             // OpenApp
             // 
@@ -66,6 +69,7 @@
             OpenApp.TabIndex = 4;
             OpenApp.Text = "Обрати додаток";
             OpenApp.UseVisualStyleBackColor = true;
+            OpenApp.TextChanged += OpenApp_TextChanged;
             OpenApp.Click += OpenApp_Click;
             // 
             // TextBox_Name
@@ -75,6 +79,7 @@
             TextBox_Name.Name = "TextBox_Name";
             TextBox_Name.Size = new Size(161, 23);
             TextBox_Name.TabIndex = 5;
+            TextBox_Name.TextChanged += TextBox_Name_TextChanged;
             // 
             // Label_Name
             // 
@@ -111,11 +116,22 @@
             radioButtonCommand.UseVisualStyleBackColor = true;
             radioButtonCommand.CheckedChanged += radioButtonCommand_CheckedChanged;
             // 
+            // checkBoxMinimized
+            // 
+            checkBoxMinimized.AutoSize = true;
+            checkBoxMinimized.Location = new Point(542, 42);
+            checkBoxMinimized.Name = "checkBoxMinimized";
+            checkBoxMinimized.Size = new Size(152, 19);
+            checkBoxMinimized.TabIndex = 11;
+            checkBoxMinimized.Text = "Згорнути при відкритті";
+            checkBoxMinimized.UseVisualStyleBackColor = true;
+            // 
             // AutorunForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(700, 146);
+            Controls.Add(checkBoxMinimized);
             Controls.Add(radioButtonCommand);
             Controls.Add(radioButtonApp);
             Controls.Add(Label_Name);
@@ -139,5 +155,6 @@
         public Label Label_Name;
         public RadioButton radioButtonApp;
         public RadioButton radioButtonCommand;
+        private CheckBox checkBoxMinimized;
     }
 }
